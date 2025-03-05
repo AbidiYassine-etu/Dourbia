@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { AuthService } from './auth/auth.service';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -11,10 +12,11 @@ import { AuthModule } from './auth/auth.module';
       port: 5432,
       username: 'postgres',
       password: 'yassine150',
-      database: 'todo_app',
+      database: 'dourbia',
       autoLoadEntities: true,
       synchronize: true,
       logging:true,
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
     }),
     AuthModule,
   ],
