@@ -19,7 +19,7 @@ async function bootstrap() {
 
  
   app.useGlobalPipes(new ValidationPipe());
-  app.use(cookieParser());
+  app.use(cookieParser() );
 
   await app.listen(process.env.PORT ?? 8000);  
 }
