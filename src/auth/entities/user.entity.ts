@@ -8,6 +8,7 @@ export class User {
 
   @Column({ unique: true })
   email: string;
+ /* this is just some changes to push to git */
 
   @Column({ })
   username: string;

@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 // import { JwtStrategy } from './jwt.strategy'; 
+ /* this is just some changes to push to git */
 
 @Module({
   imports: [
