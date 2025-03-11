@@ -10,45 +10,38 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
+  @Post('create')
   @ApiOperation({ summary: 'Créer un utilisateur' })
-  @ApiResponse({ status: 201, description: 'Utilisateur créé avec succès' })
-  @ApiResponse({ status: 409, description: 'L\'email existe déjà' })
+  @ApiResponse({ status: 201, description: 'Utilisateur créé' })
+  @ApiResponse({ status: 409, description: 'Email déjà utilisé' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.authService.create(createUserDto);
   }
 
-  @Get()
+  @Get('getAll')
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
-  @ApiResponse({ status: 200, description: 'Liste des utilisateurs' })
   findAll() {
     return this.authService.findAll();
   }
 
-  @Get(':id')
+  @Get('get/:id')
   @ApiOperation({ summary: 'Obtenir un utilisateur par ID' })
   @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
-  @ApiResponse({ status: 200, description: 'Utilisateur trouvé' })
-  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
   findOne(@Param('id') id: string) {
     return this.authService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Patch('update/:id')
   @ApiOperation({ summary: 'Mettre à jour un utilisateur' })
-  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur à mettre à jour' })
+  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
   @ApiBody({ type: UpdateUserDto })
-  @ApiResponse({ status: 200, description: 'Utilisateur mis à jour avec succès' })
-  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.authService.update(+id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete('delete/:id')
   @ApiOperation({ summary: 'Supprimer un utilisateur' })
-  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur à supprimer' })
-  @ApiResponse({ status: 200, description: 'Utilisateur supprimé avec succès' })
-  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
+  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
   remove(@Param('id') id: string) {
     return this.authService.remove(+id);
   }

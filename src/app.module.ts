@@ -13,7 +13,7 @@ import { ConfigModule } from '@nestjs/config';
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: 'yassine150',
+      password: 'admin',
       database: 'dourbia',
       autoLoadEntities: true,
       synchronize: true,
