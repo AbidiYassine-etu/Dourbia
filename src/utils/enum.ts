@@ -1,0 +1,8 @@
+export enum USERROLES {
+    SUPERADMIN = 'SUPERADMIN',
+    ADMIN = 'ADMIN',
+    EXPERT = 'EXPERT',
+    PARTENAIRE = 'PARTENAIRE',
+    USER = 'USER',
+  }
+  

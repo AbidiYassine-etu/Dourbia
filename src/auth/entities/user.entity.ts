@@ -1,5 +1,6 @@
 import { Exclude } from '@nestjs/class-transformer';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { USERROLES } from '../../utils/enum';
 
 @Entity()
 export class User {
@@ -8,9 +9,8 @@ export class User {
 
   @Column({ unique: true })
   email: string;
- /* this is just some changes to push to git */
 
-  @Column({ })
+  @Column()
   username: string;
 
   @Column()
@@ -19,4 +19,11 @@ export class User {
 
   @Column()
   avatar: string;
+
+  @Column({
+    type: 'enum',
+    enum: USERROLES,  
+    default: USERROLES.USER,  // Set the default role to USER
+  })
+  role: USERROLES;
 }
