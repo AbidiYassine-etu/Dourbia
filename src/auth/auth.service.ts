@@ -16,23 +16,26 @@ export class AuthService {
   ){}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const { email, username, password } = createUserDto;
+    const { email, username, password, country, region } = createUserDto;
 
     const existingUser = await this.userRepository.findOne({ where: { email } });
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+        throw new ConflictException('Email already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = this.userRepository.create({
-      email,
-      username,
-      password: hashedPassword,
-      avatar: '',
+        email,
+        username,
+        password: hashedPassword,
+        avatar: '',
+        country,
+        region,
     });
 
     return await this.userRepository.save(user);
-  }
+}
+
 
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();

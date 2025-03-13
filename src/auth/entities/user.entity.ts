@@ -23,7 +23,16 @@ export class User {
   @Column({
     type: 'enum',
     enum: USERROLES,  
-    default: USERROLES.USER,  // Set the default role to USER
+    default: USERROLES.USER,  
   })
   role: USERROLES;
+
+  @Column()
+  phone: string;
+
+  @Column()
+  country: string;
+
+  @Column()
+  region: string;
 }

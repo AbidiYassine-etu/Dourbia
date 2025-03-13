@@ -10,5 +10,10 @@ export class CreateUserDto {
     @IsNotEmpty()
     @MinLength(8)
     password: string;
-    
+
+    @IsNotEmpty()
+    country: string;
+
+    @IsNotEmpty()
+    region: string;
 }
