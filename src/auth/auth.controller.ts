@@ -12,41 +12,6 @@ import { User } from './entities/user.entity';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('create')
-  @ApiOperation({ summary: 'Créer un utilisateur' })
-  @ApiResponse({ status: 201, description: 'Utilisateur créé' })
-  @ApiResponse({ status: 409, description: 'Email déjà utilisé' })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.authService.create(createUserDto);
-  }
-
-  @Get('getAll')
-  @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
-  findAll() {
-    return this.authService.findAll();
-  }
-
-  @Get('get/:id')
-  @ApiOperation({ summary: 'Obtenir un utilisateur par ID' })
-  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch('update/:id')
-  @ApiOperation({ summary: 'Mettre à jour un utilisateur' })
-  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
-  @ApiBody({ type: UpdateUserDto })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.authService.update(+id, updateUserDto);
-  }
-
-  @Delete('delete/:id')
-  @ApiOperation({ summary: 'Supprimer un utilisateur' })
-  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
-  }
 
   @Post('signup')
   @UseInterceptors(ClassSerializerInterceptor)
@@ -66,6 +31,54 @@ export class AuthController {
   async signin(@Body() signinDto: SigninDto) {  
       return this.authService.signin(signinDto);
   }
+
+
+  @Post('create')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Créer un utilisateur' })
+  @ApiResponse({ status: 201, description: 'Utilisateur créé' })
+  @ApiResponse({ status: 409, description: 'Email déjà utilisé' })
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.authService.create(createUserDto);
+  }
+
+  @Get('getAll')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
+  findAll() {
+    return this.authService.findAll();
+  }
+
+  @Get('get/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Obtenir un utilisateur par ID' })
+  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
+  findOne(@Param('id') id: string) {
+    return this.authService.findOne(+id);
+  }
+
+  @Patch('update/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Mettre à jour un utilisateur' })
+  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
+  @ApiBody({ type: UpdateUserDto })
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.authService.update(+id, updateUserDto);
+  }
+
+  @Delete('delete/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Supprimer un utilisateur' })
+  @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
+  remove(@Param('id') id: string) {
+    return this.authService.remove(+id);
+  }
+
   @Get('profile')
   @UseGuards(AuthGuard)
   @ApiBearerAuth('access-token')

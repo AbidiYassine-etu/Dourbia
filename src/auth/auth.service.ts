@@ -32,6 +32,7 @@ export class AuthService {
         avatar: '',
         country,
         region,
+        phone: '',
     });
 
     return await this.userRepository.save(user);
@@ -65,33 +66,37 @@ export class AuthService {
     await this.userRepository.remove(user);
   }
 //register user
-  async signup(createUserDto: CreateUserDto): Promise<User> {
-    const { email, username, password } = createUserDto;
+async signup(createUserDto: CreateUserDto): Promise<User> {
+  const { email, username, password, country, region } = createUserDto;
 
-    const existingUser = await this.userRepository.findOne({ where: { email } });
-    if (existingUser) {
+  const existingUser = await this.userRepository.findOne({ where: { email } });
+  if (existingUser) {
+    throw new ConflictException('Email already exists');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const user = this.userRepository.create({
+    email,
+    username,
+    password: hashedPassword,
+    avatar: '',
+    country,
+    region,
+    phone: '', 
+  });
+
+  try {
+    await this.userRepository.save(user);
+    return user;
+  } catch (error) {
+    if (error.code === '23505') {
       throw new ConflictException('Email already exists');
     }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const user = this.userRepository.create({
-      email,
-      username,
-      password: hashedPassword,
-      avatar: '',
-    });
-
-    try {
-      await this.userRepository.save(user);
-      return user;
-    } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException('Email already exists');
-      }
-      throw new InternalServerErrorException();
-    }
+    throw new InternalServerErrorException();
   }
+}
+
 
   // user Connexion with JWT 
   async signin(signinDto: SigninDto): Promise<{ token: string; user: Partial<User> }> {
