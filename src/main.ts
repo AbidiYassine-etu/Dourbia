@@ -7,21 +7,29 @@ import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Swagger setup
+  // Swagger setup avec Auth
   const config = new DocumentBuilder()
-    .setTitle('API Documentation')  
-    .setDescription('La documentation de l\'API de votre application')  
-    .setVersion('1.0')  
-    .addTag('auth')  
+    .setTitle('API Documentation')
+    .setDescription("La documentation de l'API de votre application")
+    .setVersion('1.0')
+    .addTag('auth')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token', 
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document); 
+  SwaggerModule.setup('api', app, document);
 
   // Enable CORS with specific settings
   app.enableCors({
     origin: 'http://localhost:3000',
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'], // Ajoute OPTIONS ici
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'], 
     allowedHeaders: 'Content-Type, Accept, Authorization',
     credentials: true,
   });

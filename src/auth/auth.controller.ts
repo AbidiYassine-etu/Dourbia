@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, Res, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-auth.dto';
 import { UpdateUserDto } from './dto/update-auth.dto';
-import { SigninDto } from './dto/signin.dto'; // Ajoute l'import du DTO
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { SigninDto } from './dto/signin.dto'; 
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from './guards/auth.guard';
+import { User } from './entities/user.entity';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -62,7 +64,15 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Utilisateur connecté avec succès' })
   @ApiResponse({ status: 401, description: 'Identifiants invalides' })
   async signin(@Body() signinDto: SigninDto) {  
-    const { email, password } = signinDto;
-    return this.authService.signin(email, password);
+      return this.authService.signin(signinDto);
   }
+  @Get('profile')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 200, description: 'Successfully retrieved user profile.', type: User })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async profile(@Req() req): Promise<User> {
+      return this.authService.getProfile(req.user.id);
+  }
+
 }

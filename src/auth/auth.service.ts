@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt'; 
+import { SigninDto } from './dto/signin.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +15,7 @@ export class AuthService {
     private userRepository: Repository<User>,
     private jwtService: JwtService, 
   ){}
-
+//create user
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { email, username, password, country, region } = createUserDto;
 
@@ -35,12 +36,11 @@ export class AuthService {
 
     return await this.userRepository.save(user);
 }
-
-
+//get all users
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();
   }
-
+//get user by id
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
@@ -48,7 +48,7 @@ export class AuthService {
     }
     return user;
   }
-
+// update user
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
 
@@ -59,12 +59,12 @@ export class AuthService {
     Object.assign(user, updateUserDto);
     return await this.userRepository.save(user);
   }
-
+//delete user
   async remove(id: number): Promise<void> {
     const user = await this.findOne(id);
     await this.userRepository.remove(user);
   }
-
+//register user
   async signup(createUserDto: CreateUserDto): Promise<User> {
     const { email, username, password } = createUserDto;
 
@@ -93,28 +93,58 @@ export class AuthService {
     }
   }
 
-  // Connexion avec JWT 
-  async signin(email: string, password: string): Promise<{ token: string }> {
+  // user Connexion with JWT 
+  async signin(signinDto: SigninDto): Promise<{ token: string; user: Partial<User> }> {
+    const { email, password } = signinDto;
+    
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Générer un token JWT
+    // Vérification du secret JWT
+    if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+
+    // Génération du token JWT
     const token = this.jwtService.sign(
-      {
-        id: user.id, 
-        email: user.email, 
-      },
-      { secret: process.env.JWT_SECRET || 'defaultSecret', expiresIn: '1h' } 
+        {
+            id: user.id, 
+            email: user.email, 
+            role: user.role,
+        },
+        { secret: process.env.JWT_SECRET, expiresIn: '1h' }
     );
 
-    return { token };
+    return { 
+        token,
+        user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+            country: user.country,
+            region: user.region,
+        }
+    };
+}
+
+  // Méthode pour obtenir le profil d'un utilisateur
+  async getProfile(userId: number): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return user;
   }
+
 }
