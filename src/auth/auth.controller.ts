@@ -88,4 +88,40 @@ export class AuthController {
       return this.authService.getProfile(req.user.id);
   }
 
+@Post('verification-otp')
+@ApiOperation({ summary: 'Générer un OTP pour la vérification email' })
+@ApiBody({ 
+  schema: {
+    type: 'object',
+    properties: { email: { type: 'string' } }
+  }
+})
+@ApiResponse({ status: 200, description: 'OTP généré avec succès' })
+@ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
+async generateEmailVerification(@Body('email') email: string) {
+  const user = await this.authService.findUserByEmail(email);
+  await this.authService.generateEmailVerification(user.id);
+  return { status: 'success', message: 'Email envoyé' };
+}
+
+@Post('verify/:otp')
+@ApiOperation({ summary: 'Vérifier l\'email avec OTP' })
+@ApiParam({ name: 'otp', description: 'Code OTP reçu par email' })
+@ApiBody({ 
+  schema: {
+    type: 'object',
+    properties: { email: { type: 'string' } }
+  }
+})
+@ApiResponse({ status: 200, description: 'Email vérifié avec succès' })
+@ApiResponse({ status: 422, description: 'OTP invalide ou expiré' })
+async verifyEmail(
+  @Param('otp') otp: string,
+  @Body('email') email: string
+) {
+  const user = await this.authService.findUserByEmail(email);
+  const result = await this.authService.verifyEmail(user.id, otp);
+  return { status: result ? 'success' : 'failure' };
+}
+
 }

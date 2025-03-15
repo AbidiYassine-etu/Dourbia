@@ -7,6 +7,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './guards/jwt.strategy'; 
 import { AuthGuard } from './guards/auth.guard'; 
+import { EmailModule } from 'src/email/email.module';
+import { VerificationModule } from 'src/verification/verification.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { AuthGuard } from './guards/auth.guard';
       secret: process.env.JWT_SECRET || 'defaultSecret', 
       signOptions: { expiresIn: '1h' }, 
     }),
+    EmailModule,
+    VerificationModule,
   ],
   controllers: [AuthController],
   providers: [

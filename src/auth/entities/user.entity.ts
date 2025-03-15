@@ -35,4 +35,7 @@ export class User {
 
   @Column()
   region: string;
+
+  @Column({ nullable: true })
+  emailVerifiedAt: Date;
 }

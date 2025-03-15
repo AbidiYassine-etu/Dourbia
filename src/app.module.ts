@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { EmailModule } from './email/email.module';
+import { VerificationModule } from './verification/verification.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { ConfigModule } from '@nestjs/config';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
     }),
     AuthModule,
+    EmailModule,
+    VerificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
