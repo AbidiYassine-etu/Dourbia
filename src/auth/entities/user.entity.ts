@@ -1,5 +1,5 @@
 import { Exclude } from '@nestjs/class-transformer';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { USERROLES } from '../../utils/enum';
 
 @Entity()
@@ -38,4 +38,5 @@ export class User {
 
   @Column({ nullable: true })
   emailVerifiedAt: Date;
+
 }

@@ -104,24 +104,17 @@ async generateEmailVerification(@Body('email') email: string) {
   return { status: 'success', message: 'Email envoyé' };
 }
 
-@Post('verify/:otp')
-@ApiOperation({ summary: 'Vérifier l\'email avec OTP' })
+@Post('verify-email/:otp')
+@ApiOperation({ summary: "Vérifier l'email avec OTP" })
 @ApiParam({ name: 'otp', description: 'Code OTP reçu par email' })
-@ApiBody({ 
-  schema: {
-    type: 'object',
-    properties: { email: { type: 'string' } }
-  }
-})
 @ApiResponse({ status: 200, description: 'Email vérifié avec succès' })
 @ApiResponse({ status: 422, description: 'OTP invalide ou expiré' })
-async verifyEmail(
-  @Param('otp') otp: string,
-  @Body('email') email: string
-) {
-  const user = await this.authService.findUserByEmail(email);
-  const result = await this.authService.verifyEmail(user.id, otp);
-  return { status: result ? 'success' : 'failure' };
+async verifyEmail(@Param('otp') otp: string) {
+  await this.authService.verifyEmailWithOtp(otp);
+  return { 
+    status: 'success',
+    message: 'Votre email a été vérifié avec succès'
+  };
 }
 
 }

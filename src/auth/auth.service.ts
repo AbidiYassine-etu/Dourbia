@@ -12,6 +12,8 @@ import { VerificationService } from 'src/verification/verification.service';
 
 @Injectable()
 export class AuthService {
+  private pendingVerificationEmail: string | null = null;
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -53,7 +55,7 @@ export class AuthService {
     }
     return user;
   }
-  //get user by email
+//get user by email
   async findUserByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
@@ -78,7 +80,7 @@ export class AuthService {
     await this.userRepository.remove(user);
   }
 //register user
-async signup(createUserDto: CreateUserDto): Promise<User> {
+async signup(createUserDto: CreateUserDto): Promise<{ user: User; message: string }> {
   const { email, username, password, country, region } = createUserDto;
 
   const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -98,17 +100,23 @@ async signup(createUserDto: CreateUserDto): Promise<User> {
   });
 
   try {
-    await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
     
- //envoi automatique d'OTP après la création du compte
-    await this.generateEmailVerification(user.id);
+    // Stocker l'email pour la vérification
+    this.pendingVerificationEmail = email;
     
-    return user;
+    // Envoi automatique d'OTP après la création du compte
+    await this.generateEmailVerification(savedUser.id);
+    
+    return {
+      user: savedUser,
+      message: 'Compte créé avec succès. Veuillez vérifier votre email pour le code de vérification.'
+    };
   } catch (error) {
     if (error.code === '23505') {
       throw new ConflictException('Email already exists');
     }
-    throw new InternalServerErrorException();
+    throw new InternalServerErrorException('Une erreur est survenue lors de la création du compte');
   }
 }
   // user Connexion with JWT 
@@ -162,7 +170,7 @@ async signup(createUserDto: CreateUserDto): Promise<User> {
   }
 // code verification
 async generateEmailVerification(userId: number) {
-  console.log(' Génération de l’OTP pour le userId:', userId);
+  console.log("Génération de l'OTP pour le userId:", userId);
   
   const user = await this.userRepository.findOne({ where: { id: userId } });
   if (!user) {
@@ -182,36 +190,55 @@ async generateEmailVerification(userId: number) {
       html: `<p>Hi ${user.username},</p><p>Votre code de vérification est: <strong>${otp}</strong></p>`,
     });
   } catch (error) {
-    console.error(' Erreur d’envoi d’email :', error);
+    console.error("Erreur d'envoi d'email :", error);
   }
 }
 //email verification
-  async verifyEmail(userId: number, token: string) {
-    const invalidMessage = 'Invalid or expired OTP';
+  // async verifyEmail(userId: number, token: string) {
+  //   const user = await this.userRepository.findOne({ where: { id: userId } });
+  //   if (!user) {
+  //     throw new NotFoundException('Utilisateur non trouvé');
+  //   }
 
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new UnprocessableEntityException(invalidMessage);
-    }
+  //   if (user.emailVerifiedAt) {
+  //     throw new UnprocessableEntityException('Compte déjà vérifié');
+  //   }
 
-    if (user.emailVerifiedAt) {
-      throw new UnprocessableEntityException('Account already verified');
-    }
+  //   const isValid = await this.verificationTokenService.validateOtp(userId, token);
+  //   if (!isValid) {
+  //     throw new UnprocessableEntityException('Code OTP invalide ou expiré');
+  //   }
 
-    const isValid = await this.verificationTokenService.validateOtp(
-      user.id,
-      token,
-    );
+  //   user.emailVerifiedAt = new Date();
+  //   await this.userRepository.save(user);
 
-    if (!isValid) {
-      throw new UnprocessableEntityException(invalidMessage);
-    }
+  //   return true;
+  // }
 
-    user.emailVerifiedAt = new Date();
-
-    await this.userRepository.save(user);
-
-    return true;
+async verifyEmailWithOtp(otp: string): Promise<boolean> {
+  if (!this.pendingVerificationEmail) {
+    throw new UnprocessableEntityException('Aucune vérification en attente');
   }
+
+  const user = await this.findUserByEmail(this.pendingVerificationEmail);
+  
+  if (user.emailVerifiedAt) {
+    throw new UnprocessableEntityException('Compte déjà vérifié');
+  }
+
+  const isValid = await this.verificationTokenService.validateOtp(user.id, otp);
+  if (!isValid) {
+    throw new UnprocessableEntityException('Code OTP invalide ou expiré');
+  }
+
+  user.emailVerifiedAt = new Date();
+  await this.userRepository.save(user);
+  
+  // Réinitialiser l'email en attente
+  this.pendingVerificationEmail = null;
+
+  return true;
+}
+
 
 }

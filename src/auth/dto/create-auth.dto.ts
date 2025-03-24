@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, MinLength } from "@nestjs/class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, MinLength } from "@nestjs/class-validator";
 
 export class CreateUserDto {
     @IsEmail()
@@ -16,4 +16,7 @@ export class CreateUserDto {
 
     @IsNotEmpty()
     region: string;
+
+    @IsOptional()
+    avatar?: string;
 }
