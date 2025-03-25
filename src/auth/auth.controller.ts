@@ -6,6 +6,10 @@ import { SigninDto } from './dto/signin.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from './guards/auth.guard';
 import { User } from './entities/user.entity';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { ResetPasswordFinalDto } from './dto/reset-password-final.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -114,6 +118,53 @@ async verifyEmail(@Param('otp') otp: string) {
   return { 
     status: 'success',
     message: 'Votre email a été vérifié avec succès'
+  };
+}
+
+@Patch('toggle-ban/:id')
+@UseGuards(AuthGuard)
+@ApiBearerAuth('access-token')
+@ApiOperation({ summary: 'Bannir/Débannir un utilisateur' })
+@ApiParam({ name: 'id', description: "ID de l'utilisateur" })
+async toggleBan(@Param('id') id: string) {
+  const user = await this.authService.toggleBan(+id);
+  return {
+    status: 'success',
+    message: user.isBanned ? 'Utilisateur banni' : 'Utilisateur débanni',
+    user
+  };
+}
+
+@Post('password/send-code')
+@ApiOperation({ summary: 'Envoyer un code de réinitialisation de mot de passe' })
+@ApiResponse({ status: 200, description: 'Code envoyé avec succès' })
+@ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
+async sendPasswordResetCode(@Body() resetPasswordDto: ResetPasswordDto) {
+  return this.authService.generatePasswordResetOTP(resetPasswordDto.email);
+}
+
+@Post('password/verify-code/:otp')
+@ApiOperation({ summary: 'Vérifier le code de réinitialisation de mot de passe' })
+@ApiParam({ name: 'otp', description: 'Code OTP reçu par email' })
+@ApiResponse({ status: 200, description: 'Code vérifié avec succès' })
+@ApiResponse({ status: 422, description: 'Code invalide ou expiré' })
+async verifyPasswordResetCode(@Param('otp') otp: string) {
+  const isValid = await this.authService.verifyPasswordResetOTP(otp);
+  return { 
+    status: 'success',
+    message: 'Code vérifié avec succès'
+  };
+}
+
+@Post('password/reset')
+@ApiOperation({ summary: 'Réinitialiser le mot de passe' })
+@ApiResponse({ status: 200, description: 'Mot de passe réinitialisé avec succès' })
+@ApiResponse({ status: 422, description: 'Erreur de réinitialisation' })
+async resetPassword(@Body() resetPasswordFinalDto: ResetPasswordFinalDto) {
+  const success = await this.authService.resetPassword(resetPasswordFinalDto.newPassword);
+  return { 
+    status: 'success',
+    message: 'Mot de passe réinitialisé avec succès'
   };
 }
 

@@ -23,7 +23,7 @@ export class EmailService {
     try {
       const mailOptions = {
         from: process.env.MAIL_USER,
-        to: recipients.map(r => r.address).join(','), // Correction ici
+        to: recipients.map(r => r.address).join(','), 
         subject,
         html,
       };

@@ -16,7 +16,7 @@ import { VerificationModule } from 'src/verification/verification.module';
     PassportModule.register({ defaultStrategy: 'jwt' }), 
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'defaultSecret', 
-      signOptions: { expiresIn: '1h' }, 
+      signOptions: { expiresIn: '3d' },
     }),
     EmailModule,
     VerificationModule,

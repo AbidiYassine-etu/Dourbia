@@ -13,6 +13,7 @@ import { VerificationService } from 'src/verification/verification.service';
 @Injectable()
 export class AuthService {
   private pendingVerificationEmail: string | null = null;
+  private pendingPasswordResetEmail: string | null = null;
 
   constructor(
     @InjectRepository(User)
@@ -126,25 +127,25 @@ async signup(createUserDto: CreateUserDto): Promise<{ user: User; message: strin
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    if (user.isBanned) {
+        throw new UnauthorizedException('Votre compte a été suspendu. Veuillez contacter l\'administrateur.');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException('Identifiants invalides');
     }
-    // Vérification du secret JWT
-    if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is not defined in environment variables');
-    }
-    // Génération du token JWT
+
     const token = this.jwtService.sign(
         {
             id: user.id, 
             email: user.email, 
             role: user.role,
         },
-        { secret: process.env.JWT_SECRET, expiresIn: '1h' }
+        { secret: process.env.JWT_SECRET, expiresIn: '24h' }
     );
 
     return { 
@@ -158,7 +159,7 @@ async signup(createUserDto: CreateUserDto): Promise<{ user: User; message: strin
             region: user.region,
         }
     };
-}
+  }
   // Méthode pour obtenir le profil d'un utilisateur
   async getProfile(userId: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -193,27 +194,6 @@ async generateEmailVerification(userId: number) {
     console.error("Erreur d'envoi d'email :", error);
   }
 }
-//email verification
-  // async verifyEmail(userId: number, token: string) {
-  //   const user = await this.userRepository.findOne({ where: { id: userId } });
-  //   if (!user) {
-  //     throw new NotFoundException('Utilisateur non trouvé');
-  //   }
-
-  //   if (user.emailVerifiedAt) {
-  //     throw new UnprocessableEntityException('Compte déjà vérifié');
-  //   }
-
-  //   const isValid = await this.verificationTokenService.validateOtp(userId, token);
-  //   if (!isValid) {
-  //     throw new UnprocessableEntityException('Code OTP invalide ou expiré');
-  //   }
-
-  //   user.emailVerifiedAt = new Date();
-  //   await this.userRepository.save(user);
-
-  //   return true;
-  // }
 
 async verifyEmailWithOtp(otp: string): Promise<boolean> {
   if (!this.pendingVerificationEmail) {
@@ -240,5 +220,75 @@ async verifyEmailWithOtp(otp: string): Promise<boolean> {
   return true;
 }
 
+async toggleBan(id: number): Promise<User> {
+  const user = await this.findOne(id);
+  if (!user) {
+    throw new NotFoundException(`Utilisateur avec l'ID ${id} non trouvé`);
+  }
+  user.isBanned = !user.isBanned;
+  return await this.userRepository.save(user);
+}
+
+//méthode pour générer un code de réinitialisation de mot de passe
+async generatePasswordResetOTP(email: string) {
+  const user = await this.findUserByEmail(email);
+  if (!user) {
+    throw new NotFoundException('Utilisateur non trouvé');
+  }
+
+  const otp = await this.verificationTokenService.generateOtp(user.id);
+  
+  try {
+    await this.emailService.sendEmail({
+      subject: 'Dourbia - Réinitialisation de mot de passe',
+      recipients: [{ address: user.email }],
+      html: `<p>Bonjour ${user.username},</p><p>Votre code de réinitialisation de mot de passe est: <strong>${otp}</strong></p>`,
+    });
+    
+    // nouvelle variable
+    this.pendingPasswordResetEmail = email;
+    
+    return { message: 'Code envoyé avec succès' };
+  } catch (error) {
+    throw new InternalServerErrorException("Erreur lors de l'envoi de l'email");
+  }
+}
+
+// méthode pour vérifier le code de réinitialisation
+async verifyPasswordResetOTP(otp: string): Promise<boolean> {
+  if (!this.pendingPasswordResetEmail) {
+    throw new UnprocessableEntityException('Aucune réinitialisation en attente');
+  }
+
+  const user = await this.findUserByEmail(this.pendingPasswordResetEmail);
+  const isValid = await this.verificationTokenService.validateOtp(user.id, otp);
+  
+  if (!isValid) {
+    throw new UnprocessableEntityException('Code OTP invalide ou expiré');
+  }
+
+  return true;
+}
+
+//méthode pour réinitialiser le mot de passe
+async resetPassword(newPassword: string): Promise<boolean> {
+  if (!this.pendingPasswordResetEmail) {
+    throw new UnprocessableEntityException('Aucune réinitialisation en attente');
+  }
+
+  try {
+    const user = await this.findUserByEmail(this.pendingPasswordResetEmail);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    
+    user.password = hashedPassword;
+    await this.userRepository.save(user);
+
+    this.pendingPasswordResetEmail = null;
+
+    return true;
+  } catch (error) {
+    throw new InternalServerErrorException('Erreur lors de la réinitialisation du mot de passe');
+  }
+}
 
 }

@@ -39,4 +39,7 @@ export class User {
   @Column({ nullable: true })
   emailVerifiedAt: Date;
 
+  @Column({ default: false })
+  isBanned: boolean;
+
 }
