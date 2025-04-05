@@ -9,6 +9,8 @@ import { JwtService } from '@nestjs/jwt';
 import { SigninDto } from './dto/signin.dto';
 import { EmailService } from 'src/email/email.service';
 import { VerificationService } from 'src/verification/verification.service';
+import { USERROLES } from 'src/utils/enum';
+import { GoogleUserDto } from './dto/google-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -169,31 +171,78 @@ async signup(createUserDto: CreateUserDto): Promise<{ user: User; message: strin
     }
     return user;
   }
-// code verification
+// // code verification
+// async generateEmailVerification(userId: number) {
+//   console.log("Génération de l'OTP pour le userId:", userId);
+  
+//   const user = await this.userRepository.findOne({ where: { id: userId } });
+//   if (!user) {
+//     throw new NotFoundException('User not found');
+//   }
+
+//   if (user.emailVerifiedAt) {
+//     throw new UnprocessableEntityException('Account already verified');
+//   }
+//   const otp = await this.verificationTokenService.generateOtp(user.id);
+//   console.log('OTP généré :', otp);
+  
+//   try {
+//     await this.emailService.sendEmail({
+//       subject: 'Dourbia - Account Verification',
+//       recipients: [{ address: user.email }],
+//       html: `<p>Hi ${user.username},</p><p>Votre code de vérification est: <strong>${otp}</strong></p>`,
+//     });
+//   } catch (error) {
+//     console.error("Erreur d'envoi d'email :", error);
+//   }
+// }
 async generateEmailVerification(userId: number) {
   console.log("Génération de l'OTP pour le userId:", userId);
   
   const user = await this.userRepository.findOne({ where: { id: userId } });
   if (!user) {
-    throw new NotFoundException('User not found');
+    throw new NotFoundException('Utilisateur non trouvé');
   }
 
   if (user.emailVerifiedAt) {
-    throw new UnprocessableEntityException('Account already verified');
+    throw new UnprocessableEntityException('Compte déjà vérifié');
   }
+
   const otp = await this.verificationTokenService.generateOtp(user.id);
   console.log('OTP généré :', otp);
   
   try {
     await this.emailService.sendEmail({
-      subject: 'Dourbia - Account Verification',
+      subject: 'Dourbia - Vérification de compte',
       recipients: [{ address: user.email }],
-      html: `<p>Hi ${user.username},</p><p>Votre code de vérification est: <strong>${otp}</strong></p>`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+          <div style="max-width: 600px; background: white; padding: 20px; margin: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+            <h2>Bienvenue sur Dourbia, ${user.username} !</h2>
+            <p style="font-size: 16px; color: #555; text-align: center;">
+              Merci de vous être inscrit. Veuillez utiliser le code ci-dessous pour vérifier votre adresse e-mail :
+            </p>
+            <div style="text-align: center; margin: 20px 0;">
+              <span style="font-size: 24px; font-weight: bold; color: #002863; background: #5ED8F2; padding: 10px 20px; border-radius: 5px; display: inline-block;">
+                ${otp}
+              </span>
+            </div>
+            <p style="font-size: 14px; color: #777; text-align: center;">
+              Ce code est valide pendant une durée limitée. Si vous n'avez pas demandé cet email, veuillez l'ignorer.
+            </p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+            <p style="font-size: 12px; text-align: center; color: #999;">
+              © 2024 Dourbia. Tous droits réservés.
+            </p>
+          </div>
+        </div>
+      `,
     });
   } catch (error) {
     console.error("Erreur d'envoi d'email :", error);
   }
 }
+
 
 async verifyEmailWithOtp(otp: string): Promise<boolean> {
   if (!this.pendingVerificationEmail) {
@@ -289,6 +338,42 @@ async resetPassword(newPassword: string): Promise<boolean> {
   } catch (error) {
     throw new InternalServerErrorException('Erreur lors de la réinitialisation du mot de passe');
   }
+}
+
+async googleSignIn(googleUserDto: GoogleUserDto) {
+  const { email, name, googleId } = googleUserDto;
+
+  let user = await this.userRepository.findOne({ 
+    where: [{ email }, { googleId }] 
+  });
+
+  if (!user) {
+    user = this.userRepository.create({
+      email,
+      username: name,
+      googleId,
+      emailVerifiedAt: new Date(),
+      avatar: '',
+      role: USERROLES.USER,
+      password: '', 
+    });
+    await this.userRepository.save(user);
+  }
+
+  const token = this.jwtService.sign(
+    { id: user.id, email: user.email, role: user.role },
+    { secret: process.env.JWT_SECRET, expiresIn: '24h' }
+  );
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    },
+  };
 }
 
 }

@@ -42,4 +42,7 @@ export class User {
   @Column({ default: false })
   isBanned: boolean;
 
+  @Column({ nullable: true })
+  googleId: string;
+
 }

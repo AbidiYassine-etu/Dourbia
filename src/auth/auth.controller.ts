@@ -10,6 +10,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ResetPasswordFinalDto } from './dto/reset-password-final.dto';
+import { GoogleUserDto } from './dto/google-user.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -166,6 +167,14 @@ async resetPassword(@Body() resetPasswordFinalDto: ResetPasswordFinalDto) {
     status: 'success',
     message: 'Mot de passe réinitialisé avec succès'
   };
+}
+
+@Post('google')
+@ApiOperation({ summary: 'Connexion avec Google' })
+@ApiBody({ type: GoogleUserDto })
+@ApiResponse({ status: 200, description: 'Connexion réussie' })
+async googleAuth(@Body() googleUserDto: GoogleUserDto) {
+  return this.authService.googleSignIn(googleUserDto);
 }
 
 }
