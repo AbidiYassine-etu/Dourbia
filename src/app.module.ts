@@ -15,7 +15,7 @@ import { VerificationModule } from './verification/verification.module';
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: 'admin',
+      password: 'yassine150',
       database: 'dourbia',
       autoLoadEntities: true,
       synchronize: true,

@@ -7,15 +7,17 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } 
 import { AuthGuard } from './guards/auth.guard';
 import { User } from './entities/user.entity';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 import { ResetPasswordFinalDto } from './dto/reset-password-final.dto';
-import { GoogleUserDto } from './dto/google-user.dto';
+import { GoogleAuthGuard } from './google-auth-guard';
+import { JwtService } from '@nestjs/jwt';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService,
+    private readonly jwtService : JwtService
+  ) {}
+  
 
 
   @Post('signup')
@@ -169,12 +171,43 @@ async resetPassword(@Body() resetPasswordFinalDto: ResetPasswordFinalDto) {
   };
 }
 
-@Post('google')
-@ApiOperation({ summary: 'Connexion avec Google' })
-@ApiBody({ type: GoogleUserDto })
-@ApiResponse({ status: 200, description: 'Connexion réussie' })
-async googleAuth(@Body() googleUserDto: GoogleUserDto) {
-  return this.authService.googleSignIn(googleUserDto);
+//Google Auth Route
+@Get('google')
+@UseGuards(GoogleAuthGuard)
+async googleAuth() {
+  //redirects you to Google Auth Route
+}
+
+@Get('google/callback')
+@UseGuards(GoogleAuthGuard)
+async googleAuthRedirect(@Req() req, @Res() res) {
+  try {
+    const user = req.user;
+
+    const payload = { 
+      email: user.email, 
+      sub: user.googleId,
+      name: user.name 
+    };
+
+    const jwt = this.jwtService.sign(payload);
+
+    // Set JWT as a secure, HTTP-only cookie
+    res.cookie('access_token', jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // true in production (HTTPS)
+      sameSite: 'lax', // or 'strict' for more protection
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    //adhouma fil front 
+    //loula ki tsir success wel thenya fil error
+    // Redirect to the frontend (token is in cookie, not in URL)
+    res.redirect('http://localhost:3000/auth-success');
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.redirect(`http://localhost:3000/auth-error?message=${error.message}`);
+  }
 }
 
 }

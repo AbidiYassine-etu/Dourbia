@@ -340,40 +340,6 @@ async resetPassword(newPassword: string): Promise<boolean> {
   }
 }
 
-async googleSignIn(googleUserDto: GoogleUserDto) {
-  const { email, name, googleId } = googleUserDto;
 
-  let user = await this.userRepository.findOne({ 
-    where: [{ email }, { googleId }] 
-  });
-
-  if (!user) {
-    user = this.userRepository.create({
-      email,
-      username: name,
-      googleId,
-      emailVerifiedAt: new Date(),
-      avatar: '',
-      role: USERROLES.USER,
-      password: '', 
-    });
-    await this.userRepository.save(user);
-  }
-
-  const token = this.jwtService.sign(
-    { id: user.id, email: user.email, role: user.role },
-    { secret: process.env.JWT_SECRET, expiresIn: '24h' }
-  );
-
-  return {
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-    },
-  };
-}
 
 }

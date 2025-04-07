@@ -9,6 +9,8 @@ import { JwtStrategy } from './guards/jwt.strategy';
 import { AuthGuard } from './guards/auth.guard'; 
 import { EmailModule } from 'src/email/email.module';
 import { VerificationModule } from 'src/verification/verification.module';
+import { GoogleStrategy } from './google.strategy';
+import { GoogleAuthGuard } from './google-auth-guard';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { VerificationModule } from 'src/verification/verification.module';
     AuthService,
     JwtStrategy, 
     AuthGuard,
+    GoogleStrategy,
+    GoogleAuthGuard,
   ], 
   exports: [
     AuthService, 
