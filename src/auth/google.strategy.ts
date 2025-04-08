@@ -2,12 +2,15 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-google-oauth20';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AuthService } from './auth.service';
 
 
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-    constructor(private jwtService: JwtService) {
+    constructor(private jwtService: JwtService,
+      private userService: AuthService
+    ) {
         super({
             clientID: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -22,25 +25,44 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     }
     
     async validate(
-        req: any,
-        accessToken: string,
-        refreshToken: string,
-        profile: any
-      ) {
-        console.log('Google Profile:', JSON.stringify(profile, null, 2));
-        if (!profile || !profile.id || !profile.emails?.[0]?.value) {
-          throw new Error('Invalid Google profile structure');
-        }
-      
-        const { id, displayName, emails } = profile;
-      
-        return {
-          googleId: id,
-          email: emails[0].value,
-          name: displayName || emails[0].value.split('@')[0],
-          accessToken,
-          refreshToken
-        };
+  
+      req: any,
+      accessToken: string,
+      refreshToken: string,
+      profile: any,
+    ): Promise<any> {
+      const datenow = new Date();
+      const email = profile.emails?.[0]?.value;
+    
+      if (!email) {
+        throw new Error('Email not found in Google profile');
       }
+    
+      // Check if user exists
+      let user = await this.userService.findByEmail(email);
+    
+      if (!user) {
+        user = await this.userService.create({
+          email,
+          username: profile.displayName || email.split('@')[0],
+          googleId: profile.id,
+          password: '', // empty since Google handles auth
+          country: '',
+          region: '',
+          emailVerifiedAt: datenow,
+          avatar: profile.photos?.[0]?.value || '',
+        });
+      }
+    
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.username,
+        googleId: user.googleId,
+        accessToken,
+        refreshToken,
+      };
+    }
+    
       
 }

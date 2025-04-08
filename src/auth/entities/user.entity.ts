@@ -17,7 +17,7 @@ export class User {
   @Exclude()
   password: string;
 
-  @Column()
+  @Column({default: ''})
   avatar: string;
 
   @Column({
@@ -27,13 +27,13 @@ export class User {
   })
   role: USERROLES;
 
-  @Column()
+  @Column({nullable: true})
   phone: string;
 
-  @Column()
+  @Column({nullable: true})
   country: string;
 
-  @Column()
+  @Column({nullable: true})
   region: string;
 
   @Column({ nullable: true })

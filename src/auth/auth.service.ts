@@ -59,13 +59,20 @@ export class AuthService {
     return user;
   }
 //get user by email
-  async findUserByEmail(email: string): Promise<User> {
+  async findUserByEmail(email: string): Promise<User>  {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
     }
     return user;
   }
+
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
+
 // update user
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
@@ -339,6 +346,7 @@ async resetPassword(newPassword: string): Promise<boolean> {
     throw new InternalServerErrorException('Erreur lors de la réinitialisation du mot de passe');
   }
 }
+
 
 
 

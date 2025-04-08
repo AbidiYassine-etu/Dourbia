@@ -182,6 +182,7 @@ async googleAuth() {
 @UseGuards(GoogleAuthGuard)
 async googleAuthRedirect(@Req() req, @Res() res) {
   try {
+    
     const user = req.user;
 
     const payload = { 
