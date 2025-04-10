@@ -23,6 +23,6 @@ export class CreateUserDto {
     @IsOptional()
     googleId: string;
 
-    @IsOptional()
+    @IsNotEmpty()
     emailVerifiedAt: Date;
 }

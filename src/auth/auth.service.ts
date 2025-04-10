@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, Res, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-auth.dto';
 import { UpdateUserDto } from './dto/update-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,8 +9,9 @@ import { JwtService } from '@nestjs/jwt';
 import { SigninDto } from './dto/signin.dto';
 import { EmailService } from 'src/email/email.service';
 import { VerificationService } from 'src/verification/verification.service';
-import { USERROLES } from 'src/utils/enum';
-import { GoogleUserDto } from './dto/google-user.dto';
+import { Response } from 'express';
+
+
 
 @Injectable()
 export class AuthService {
@@ -46,6 +47,32 @@ export class AuthService {
 
     return await this.userRepository.save(user);
 }
+
+
+async createUserLoggedInByGoogle(createUserDto: CreateUserDto): Promise<User> {
+  const { email, username, password, country, region, avatar, emailVerifiedAt , googleId } = createUserDto;
+
+  const existingUser = await this.userRepository.findOne({ where: { email } });
+  if (existingUser) {
+      throw new ConflictException('Email already exists');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+  const user = this.userRepository.create({
+      email,
+      username,
+      password: hashedPassword,
+      avatar,
+      country,
+      region,
+      phone: '',
+      emailVerifiedAt,
+      googleId,
+  });
+
+  return await this.userRepository.save(user);
+}
+
 //get all users
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();
@@ -130,45 +157,54 @@ async signup(createUserDto: CreateUserDto): Promise<{ user: User; message: strin
   }
 }
   // user Connexion with JWT 
-  async signin(signinDto: SigninDto): Promise<{ token: string; user: Partial<User> }> {
+  async signin(signinDto: SigninDto, @Res({ passthrough: true }) res: Response): Promise<Partial<User>> {
     const { email, password } = signinDto;
-    
+  
     const user = await this.userRepository.findOne({ where: { email } });
-
+  
     if (!user) {
-        throw new UnauthorizedException('Identifiants invalides');
+      throw new UnauthorizedException('Identifiants invalides');
     }
-
+  
     if (user.isBanned) {
-        throw new UnauthorizedException('Votre compte a été suspendu. Veuillez contacter l\'administrateur.');
+      throw new UnauthorizedException('Votre compte a été suspendu. Veuillez contacter l\'administrateur.');
     }
-
+  
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-        throw new UnauthorizedException('Identifiants invalides');
+      throw new UnauthorizedException('Identifiants invalides');
     }
-
+  
     const token = this.jwtService.sign(
-        {
-            id: user.id, 
-            email: user.email, 
-            role: user.role,
-        },
-        { secret: process.env.JWT_SECRET, expiresIn: '24h' }
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '24h',
+      }
     );
-
-    return { 
-        token,
-        user: {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            role: user.role,
-            country: user.country,
-            region: user.region,
-        }
+  
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
+  
+    // ✅ Return only user data, not the token
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      country: user.country,
+      region: user.region,
     };
   }
+  
   // Méthode pour obtenir le profil d'un utilisateur
   async getProfile(userId: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id: userId } });

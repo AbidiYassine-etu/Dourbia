@@ -42,7 +42,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       let user = await this.userService.findByEmail(email);
     
       if (!user) {
-        user = await this.userService.create({
+        user = await this.userService.createUserLoggedInByGoogle({
           email,
           username: profile.displayName || email.split('@')[0],
           googleId: profile.id,

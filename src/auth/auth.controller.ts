@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, Res, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, Res, UseGuards, Req,  } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-auth.dto';
 import { UpdateUserDto } from './dto/update-auth.dto';
@@ -10,6 +10,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResetPasswordFinalDto } from './dto/reset-password-final.dto';
 import { GoogleAuthGuard } from './google-auth-guard';
 import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
+
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,14 +37,13 @@ export class AuthController {
   @ApiBody({ type: SigninDto })  
   @ApiResponse({ status: 200, description: 'Utilisateur connecté avec succès' })
   @ApiResponse({ status: 401, description: 'Identifiants invalides' })
-  async signin(@Body() signinDto: SigninDto) {  
-      return this.authService.signin(signinDto);
+  async signin(@Body() signinDto: SigninDto, @Res({ passthrough: true }) res: Response) {
+    return this.authService.signin(signinDto, res);
   }
 
 
   @Post('create')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Créer un utilisateur' })
   @ApiResponse({ status: 201, description: 'Utilisateur créé' })
   @ApiResponse({ status: 409, description: 'Email déjà utilisé' })
@@ -52,7 +53,6 @@ export class AuthController {
 
   @Get('getAll')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
   findAll() {
     return this.authService.findAll();
@@ -60,7 +60,6 @@ export class AuthController {
 
   @Get('get/:id')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Obtenir un utilisateur par ID' })
   @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
   findOne(@Param('id') id: string) {
@@ -69,7 +68,6 @@ export class AuthController {
 
   @Patch('update/:id')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Mettre à jour un utilisateur' })
   @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
   @ApiBody({ type: UpdateUserDto })
@@ -79,7 +77,6 @@ export class AuthController {
 
   @Delete('delete/:id')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Supprimer un utilisateur' })
   @ApiParam({ name: 'id', description: 'ID de l\'utilisateur' })
   remove(@Param('id') id: string) {
@@ -88,7 +85,6 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(AuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiResponse({ status: 200, description: 'Successfully retrieved user profile.', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async profile(@Req() req): Promise<User> {
@@ -126,7 +122,6 @@ async verifyEmail(@Param('otp') otp: string) {
 
 @Patch('toggle-ban/:id')
 @UseGuards(AuthGuard)
-@ApiBearerAuth('access-token')
 @ApiOperation({ summary: 'Bannir/Débannir un utilisateur' })
 @ApiParam({ name: 'id', description: "ID de l'utilisateur" })
 async toggleBan(@Param('id') id: string) {
@@ -187,7 +182,7 @@ async googleAuthRedirect(@Req() req, @Res() res) {
 
     const payload = { 
       email: user.email, 
-      sub: user.googleId,
+      sub: user.id,
       name: user.name 
     };
 
@@ -211,4 +206,15 @@ async googleAuthRedirect(@Req() req, @Res() res) {
   }
 }
 
+@Post('logout')
+async logout(@Res({ passthrough: true }) res: Response) {
+  res.clearCookie('access_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+  });
+
+  return { message: 'Logged out successfully' };
+}
 }
