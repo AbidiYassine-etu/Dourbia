@@ -88,7 +88,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Successfully retrieved user profile.', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async profile(@Req() req): Promise<User> {
-      return this.authService.getProfile(req.user.id);
+      return this.authService.getProfile(req.user.email);
   }
 
 @Post('verification-otp')

@@ -206,11 +206,11 @@ async signup(createUserDto: CreateUserDto): Promise<{ user: User; message: strin
   }
   
   // Méthode pour obtenir le profil d'un utilisateur
-  async getProfile(userId: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  async getProfile(email:string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new NotFoundException(`User with email ${email} not found`);
     }
     return user;
   }
