@@ -7,10 +7,17 @@ import { ConfigModule } from '@nestjs/config';
 import { EmailModule } from './email/email.module';
 import { VerificationModule } from './verification/verification.module';
 import { ContactModule } from './contact/contact.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+
 
 @Module({
   imports: [
-    ConfigModule.forRoot(), 
+    ConfigModule.forRoot(),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads', 'avatars'),
+      serveRoot: '/avatars',
+    }), 
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',

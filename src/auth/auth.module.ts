@@ -11,6 +11,8 @@ import { EmailModule } from 'src/email/email.module';
 import { VerificationModule } from 'src/verification/verification.module';
 import { GoogleStrategy } from './google.strategy';
 import { GoogleAuthGuard } from './google-auth-guard';
+import { AvatarController } from './avatar.controller';
+import { AvatarService } from './avatar.service';
 
 @Module({
   imports: [
@@ -23,20 +25,22 @@ import { GoogleAuthGuard } from './google-auth-guard';
     EmailModule,
     VerificationModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController,AvatarController],
   providers: [
     AuthService,
     JwtStrategy, 
     AuthGuard,
     GoogleStrategy,
     GoogleAuthGuard,
+    AvatarService,
   ], 
   exports: [
     AuthService, 
     PassportModule, 
     JwtModule, 
     JwtStrategy, 
-    AuthGuard, 
+    AuthGuard,
+    AvatarService, 
   ], 
 })
 export class AuthModule {}

@@ -111,6 +111,20 @@ async createUserLoggedInByGoogle(createUserDto: CreateUserDto): Promise<User> {
     Object.assign(user, updateUserDto);
     return await this.userRepository.save(user);
   }
+
+
+  // update user by email
+  async updateUserByEmail(email: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findUserByEmail(email);
+
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 12);
+    }
+
+    Object.assign(user, updateUserDto);
+    return await this.userRepository.save(user);
+  }
+
 //delete user
   async remove(id: number): Promise<void> {
     const user = await this.findOne(id);
