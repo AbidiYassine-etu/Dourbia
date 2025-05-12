@@ -9,6 +9,7 @@ import { VerificationModule } from './verification/verification.module';
 import { ContactModule } from './contact/contact.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { BlogModule } from './blog/blog.module';
 
 
 @Module({
@@ -17,7 +18,11 @@ import { join } from 'path';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads', 'avatars'),
       serveRoot: '/avatars',
-    }), 
+    },
+    {
+      rootPath: join(__dirname, '..', 'uploads', 'blogs'),
+      serveRoot: '/blogs',
+    },), 
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
@@ -34,6 +39,7 @@ import { join } from 'path';
     EmailModule,
     VerificationModule,
     ContactModule,
+    BlogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
